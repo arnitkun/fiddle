@@ -24,6 +24,7 @@ import { fancyImport } from '../utils/import';
 import { normalizeVersion } from '../utils/normalize-version';
 import { isEditorBackup, isEditorId, isPanelId } from '../utils/type-checks';
 import { BinaryManager } from './binary';
+import { BisectInstance } from './bisect';
 import { DEFAULT_MOSAIC_ARRANGEMENT } from './constants';
 import { getContent, isContentUnchanged } from './content';
 import { getLocalTypePathForVersion, updateEditorTypeDefinitions } from './fetch-types';
@@ -66,7 +67,6 @@ export class AppState {
   // -- Persisted settings ------------------
   @observable public version: string = defaultVersion;
   @observable public theme: string | null = localStorage.getItem('theme');
-  @observable public isClearingConsoleOnRun: boolean = !!this.retrieve('isClearingConsoleOnRun');
   @observable public gitHubAvatarUrl: string | null = localStorage.getItem('gitHubAvatarUrl');
   @observable public gitHubName: string | null = localStorage.getItem('gitHubName');
   @observable public gitHubLogin: string | null = localStorage.getItem('gitHubLogin');
@@ -80,25 +80,29 @@ export class AppState {
       || [ ElectronVersionState.downloading, ElectronVersionState.ready, ElectronVersionState.unknown ];
   @observable public isKeepingUserDataDirs: boolean = !!this.retrieve('isKeepingUserDataDirs');
   @observable public isEnablingElectronLogging: boolean = !!this.retrieve('isEnablingElectronLogging');
-
-  @observable public binaryManager: BinaryManager = new BinaryManager();
+  @observable public isClearingConsoleOnRun: boolean = !!this.retrieve('isClearingConsoleOnRun');
+  // @observable public isBisectButtonShown: boolean = !!this.retrieve('isBisectButtonShown');
 
   // -- Various session-only state ------------------
   @observable public gistId: string = '';
-  @observable public isPublishing: boolean = false;
   @observable public versions: Record<string, ElectronVersion> = arrayToStringMap(knownVersions);
   @observable public output: Array<OutputEntry> = [];
   @observable public localPath: string | undefined;
-  @observable public isUpdatingElectronVersions = false;
   @observable public warningDialogTexts = { label: '', ok: 'Okay', cancel: 'Cancel' };
   @observable public confirmationDialogTexts = { label: '', ok: 'Okay', cancel: 'Cancel' };
   @observable public warningDialogLastResult: boolean | null = null;
   @observable public confirmationPromptLastResult: boolean | null = null;
-  @observable public isRunning = false;
   @observable public mosaicArrangement: MosaicNode<MosaicId> | null = DEFAULT_MOSAIC_ARRANGEMENT;
   @observable public templateName: string | undefined;
   @observable public currentDocsDemoPage: DocsDemoPage = DocsDemoPage.DEFAULT;
   @observable public localTypeWatcher: fsType.FSWatcher | undefined;
+  @observable public binaryManager: BinaryManager = new BinaryManager();
+  @observable public bisectInstance: BisectInstance | undefined;
+
+  @observable public isPublishing: boolean = false;
+  @observable public isRunning: boolean = false;
+  @observable public isUnsaved: boolean = false;
+  @observable public isUpdatingElectronVersions: boolean = false;
 
   // -- Various "isShowing" settings ------------------
   @observable public isConsoleShowing: boolean = false;
@@ -106,7 +110,7 @@ export class AppState {
   @observable public isWarningDialogShowing: boolean = false;
   @observable public isConfirmationPromptShowing: boolean = false;
   @observable public isSettingsShowing: boolean = false;
-  @observable public isUnsaved: boolean = false;
+  @observable public isBisectDialogShowing: boolean = false;
   @observable public isAddVersionDialogShowing: boolean = false;
   @observable public isThemeDialogShowing: boolean = false;
   @observable public isTourShowing: boolean = !localStorage.getItem('hasShownTour');
@@ -132,6 +136,7 @@ export class AppState {
     this.toggleConsole = this.toggleConsole.bind(this);
     this.clearConsole = this.clearConsole.bind(this);
     this.toggleSettings = this.toggleSettings.bind(this);
+    this.toggleBisectDialog = this.toggleBisectDialog.bind(this);
     this.updateElectronVersions = this.updateElectronVersions.bind(this);
 
     ipcRendererManager.on(IpcEvents.OPEN_SETTINGS, this.toggleSettings);
@@ -260,6 +265,10 @@ export class AppState {
     if (this.isWarningDialogShowing) {
       this.warningDialogLastResult = null;
     }
+  }
+
+  @action public toggleBisectDialog() {
+    this.isBisectDialogShowing = !this.isBisectDialogShowing;
   }
 
   @action public toggleConfirmationPromptDialog() {

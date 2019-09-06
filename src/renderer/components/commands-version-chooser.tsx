@@ -1,4 +1,4 @@
-import { Button, MenuItem } from '@blueprintjs/core';
+import { Button, ButtonGroup, MenuItem } from '@blueprintjs/core';
 import { ItemPredicate, ItemRenderer, Select } from '@blueprintjs/select';
 import { observer } from 'mobx-react';
 import * as React from 'react';
@@ -144,24 +144,28 @@ export class VersionChooser extends React.Component<VersionChooserProps, Version
   }
 
   public render() {
-    const { currentElectronVersion } = this.props.appState;
+    const { currentElectronVersion, bisectInstance } = this.props.appState;
     const { version } = currentElectronVersion;
 
     return (
-      <ElectronVersionSelect
-        filterable={true}
-        items={this.getItems()}
-        itemRenderer={renderItem}
-        itemPredicate={filterItem}
-        onItemSelect={this.onItemSelect}
-        noResults={<MenuItem disabled={true} text='No results.' />}
-      >
-        <Button
-          className='version-chooser'
-          text={`Electron v${version}`}
-          icon={getItemIcon(currentElectronVersion)}
-        />
-      </ElectronVersionSelect>
+      <ButtonGroup>
+        <ElectronVersionSelect
+          filterable={true}
+          items={this.getItems()}
+          itemRenderer={renderItem}
+          itemPredicate={filterItem}
+          onItemSelect={this.onItemSelect}
+          noResults={<MenuItem disabled={true} text='No results.' />}
+          disabled={!!bisectInstance}
+        >
+          <Button
+            className='version-chooser'
+            text={`Electron v${version}`}
+            icon={getItemIcon(currentElectronVersion)}
+            disabled={!!bisectInstance}
+          />
+        </ElectronVersionSelect>
+      </ButtonGroup>
     );
   }
 }

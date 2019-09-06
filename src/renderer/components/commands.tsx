@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { AppState } from '../state';
 import { AddressBar } from './commands-address-bar';
+import { BisectHandler } from './commands-bisect';
 import { EditorDropdown } from './commands-editors';
 import { PublishButton } from './commands-publish-button';
 import { Runner } from './commands-runner';
@@ -35,6 +36,9 @@ export class Commands extends React.Component<CommandsProps, {}> {
           <ControlGroup fill={true} vertical={false}>
             <VersionChooser appState={appState} />
             <Runner appState={appState} />
+          </ControlGroup>
+          <ControlGroup fill={true} vertical={false}>
+            <BisectHandler appState={appState} />
           </ControlGroup>
           <ControlGroup fill={true} vertical={false}>
             <Button
